@@ -1,0 +1,68 @@
+#include <iostream>
+using namespace std;
+
+struct pila {
+    int n_elem;
+    int *array;
+    int *top;
+
+    pila(int nro);
+    ~pila();
+    bool lleno();
+    bool vacio();
+    bool push(int val);
+    bool pop(int &val);
+
+};
+
+pila::pila(int nro) {
+    n_elem = nro;
+    array = new int[n_elem];
+    top = NULL;
+};
+
+bool pila::lleno() {
+    return top == array + n_elem + 1;
+};
+
+bool pila::vacio() {
+    return !top;
+};
+
+bool pila::push(int val) {
+    if (vacio())
+        top = array;
+    else {
+        if (lleno())
+            return false;
+        else
+            top++;
+    }
+    *top = val;
+};
+
+bool pila::pop(int &val) {
+    if (vacio())
+        return false;
+    val = *top;
+    top--;
+    if (top < array)
+        top = NULL;
+    return true;
+};
+
+pila::~pila() {
+    delete [] array;
+};
+
+int main(){
+
+    pila M{9};
+
+    M.push(2);
+    M.push(3);
+    M.push(4);
+
+
+    return 0;
+}
