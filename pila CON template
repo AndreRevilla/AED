@@ -1,0 +1,81 @@
+#include <iostream>
+using namespace std;
+
+template<class T, int N = 10>
+struct pila {
+    int n_elem;
+    T* array;
+    T* top;
+
+    pila();
+    ~pila();
+    bool lleno();
+    bool vacio();
+    bool push(T val);
+    bool pop(T& val);
+
+};
+
+template<class T, int N>
+pila<T, N>::pila() {
+    n_elem = N;
+    array = new T[n_elem];
+    top = NULL;
+};
+
+template<class T, int N>
+bool pila<T, N>::lleno() {
+    return top == array + n_elem + 1;
+};
+
+template<class T, int N>
+bool pila<T, N>::vacio() {
+    return !top;
+};
+
+template<class T, int N>
+bool pila<T, N>::push(T val) {
+    if (vacio())
+        top = array;
+    else {
+        if (lleno())
+            return false;
+        else
+            top++;
+    }
+    *top = val;
+    return true;
+};
+
+template<class T, int N>
+bool pila<T, N>::pop(T& val) {
+    if (vacio())
+        return false;
+    val = *top;
+    top--;
+    if (top < array)
+        top = NULL;
+    return true;
+};
+
+template<class T, int N>
+pila<T, N>::~pila() {
+    delete[] array;
+};
+
+int main() {
+
+    pila <int,10> p_int;
+    pila<char> p_char;
+
+    if (p_int.push(10))
+        cout << "ingreso 10" << endl;
+    else
+        cout << "fallo ingreso 10" << endl;
+    p_char.push('B');
+    char X;
+    p_char.pop(X);
+
+
+    return 0;
+}
