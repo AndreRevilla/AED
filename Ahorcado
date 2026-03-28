@@ -1,0 +1,102 @@
+#include <iostream>
+using namespace std;
+
+template<class T, int N = 30>
+struct estado {
+    int n_elem;
+    int vidas;
+    T* array;
+    T* head;
+    T* tail;
+    T* final;
+    
+    estado();
+    ~estado();
+    bool lleno();
+    bool vacio();
+    bool push(T val);
+    bool pop(T& val);
+
+};
+
+template<class T, int N>
+estado<T, N>::estado() {
+    n_elem = N;
+    vidas = 15;
+    array = new T[n_elem];
+    final = array + (n_elem - 1);
+    head = NULL;
+    tail = NULL;
+}
+
+template<class T, int N>
+bool estado<T, N>::lleno() {
+    return ((tail == final && head == array) || (head - 1 == tail));
+}
+
+template<class T, int N>
+bool estado<T, N>::vacio() {
+    if (head == nullptr && tail == nullptr)
+        return true;
+    else
+        return false;
+}
+
+template<class T, int N>
+bool estado<T, N>::push(T val) {
+    if (lleno()) {
+        tail++;
+        if (tail > final) {
+            head++;
+            tail = array;
+        }
+        else
+            head++;
+    }
+
+    if (vacio()) {
+        head = array;
+        tail = array;
+    }
+
+    else {
+        tail++;
+        if (tail > final)
+            tail = array;
+    }
+
+    *tail = val;
+    cout << "se ingreso: " << val << endl;
+    return true;
+}
+
+template<class T, int N>
+bool estado<T, N>::pop(T& val) {
+    if (vacio()) {
+        cout << "No hay estados a mostrar" << endl;
+        return false;
+    }
+    val = *head;
+    if (head == tail) {
+        head = nullptr;
+        tail = nullptr;
+    }
+    else {
+        tail--;
+        if (tail < array)
+            tail = final;
+    }
+    cout << "Se removio: " << val << endl;
+    return true;
+}
+
+template<class T, int N>
+estado<T, N>::~estado() {
+    delete[] array;
+}
+
+int main() {
+
+
+    return 0;
+}
