@@ -46,12 +46,13 @@ template<class T, int N>
 bool estado<T, N>::push(T val) {
     if (lleno()) {
         tail++;
+        head++;
         if (tail > final) {
-            head++;
             tail = array;
         }
-        else
-            head++;
+        if (head > final) {
+            head = array;
+        }
     }
 
     if (vacio()) {
@@ -61,8 +62,6 @@ bool estado<T, N>::push(T val) {
 
     else {
         tail++;
-        if (tail > final)
-            tail = array;
     }
 
     *tail = val;
@@ -76,7 +75,7 @@ bool estado<T, N>::pop(T& val) {
         cout << "No hay estados a mostrar" << endl;
         return false;
     }
-    val = *head;
+    val = *tail;
     if (head == tail) {
         head = nullptr;
         tail = nullptr;
