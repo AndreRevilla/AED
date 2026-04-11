@@ -1,5 +1,21 @@
 #include <iostream>
+#include <stdlib.h>
+#include <ctime>  
 using namespace std;
+
+struct intento {
+    int vidas;
+    string palabra_adivinada;
+    string letras_erroneas;
+
+    intento(int v = 15, string p = "", string le = "");
+};
+
+intento::intento(int v, string p, string le) {
+    vidas = v;
+    palabra_adivinada = p;
+    letras_erroneas = le;
+}
 
 template<class T, int N = 30>
 struct estado {
@@ -90,8 +106,59 @@ estado<T, N>::~estado() {
     delete[] array;
 }
 
-int main() {
+void juego() {
+    string palabras[] = {"banana", "computadora", "algoritmo", "estructura", "puntero"};
+    int total_palabras = 5;
 
+    srand(time(0));
+    string palabra_secreta = palabras[rand() % total_palabras];
+
+    estado<intento, 10> pila;
+    intento actual(15, string(palabra_secreta.size(), '_'), "");
+
+    while (actual.vidas > 0 && actual.palabra_adivinada != palabra_secreta) {
+        cout << "Palabra  : " << actual.palabra_adivinada << endl;
+        cout << "Vidas    : " << actual.vidas << endl;
+        cout << "Errores  : " << actual.letras_erroneas << endl;
+        cout << "Letra (* para Ctrl+Z): ";
+
+        char entrada;
+        cin >> entrada;
+
+        if (entrada == '*') {
+            pila.pop(actual);
+            continue;
+        }
+
+        // Guardar estado actual ANTES del intento
+        pila.push(actual);
+
+        // Procesar letra
+        bool acierto = false;
+        for (int i = 0; i < palabra_secreta.size(); i++) {
+            if (palabra_secreta[i] == entrada) {
+                actual.palabra_adivinada[i] = entrada;
+                acierto = true;
+            }
+        }
+
+        if (!acierto) {
+            actual.letras_erroneas += entrada;
+            actual.vidas--;
+            cout << "Incorrecto! -1 vida." << endl;
+        } else {
+            cout << "Correcto!" << endl;
+        }
+    }
+
+    if (actual.palabra_adivinada == palabra_secreta)
+        cout << "Ganaste! La palabra era: " << palabra_secreta << endl;
+    else
+        cout << "Perdiste. La palabra era: " << palabra_secreta << endl;
+}
+
+int main() {
+    juego();
 
     return 0;
 }
