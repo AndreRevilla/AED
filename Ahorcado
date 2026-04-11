@@ -4,7 +4,6 @@ using namespace std;
 template<class T, int N = 30>
 struct estado {
     int n_elem;
-    int vidas;
     T* array;
     T* head;
     T* tail;
@@ -22,7 +21,6 @@ struct estado {
 template<class T, int N>
 estado<T, N>::estado() {
     n_elem = N;
-    vidas = 15;
     array = new T[n_elem];
     final = array + (n_elem - 1);
     head = NULL;
@@ -55,7 +53,7 @@ bool estado<T, N>::push(T val) {
         }
     }
 
-    if (vacio()) {
+    else if (vacio()) {
         head = array;
         tail = array;
     }
