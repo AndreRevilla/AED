@@ -1,0 +1,271 @@
+#include <iostream>
+#include <string>
+#include <cctype>
+using namespace std;
+
+class cDeque
+{
+  private:
+    int** mapa  = NULL;
+    int** M_INI = NULL;
+    int** M_FIN = NULL;
+    int*  V_INI = NULL;
+    int*  V_FIN = NULL;
+  public:
+    void push_front(int n);
+    void push_back(int n);
+    int  pop_front();
+    int  pop_back();
+    int& operator[](int id);
+    bool empty() { return V_INI == NULL; }
+
+    cDeque()
+    {
+      mapa  = new int*[11];
+      M_INI = mapa + 5;
+      M_FIN = M_INI;
+    }
+};
+
+void cDeque::push_front(int n)
+{
+  if (!V_INI)
+  {
+    M_INI = mapa + 5;  
+    M_FIN = M_INI;
+    *M_INI = new int[11];
+    V_INI  = *M_INI + 5;  
+    V_FIN = V_INI;
+    *V_INI = n;
+  }
+  else if (V_INI == *M_INI)
+  {
+    if (M_INI == mapa) { 
+        cout << "LIMITES LLENOS\n"; return; }
+    M_INI--;
+    *M_INI = new int[11];
+    V_INI  = *M_INI + 10;
+    *V_INI = n;
+  }
+  else { 
+      V_INI--; 
+      *V_INI = n; 
+  }
+}
+
+void cDeque::push_back(int n)
+{
+  if (!V_FIN)
+  {
+    M_INI = mapa + 5;  
+    M_FIN = M_INI;
+    *M_INI = new int[11];
+    V_INI  = *M_INI + 5;  
+    V_FIN = V_INI;
+    *V_INI = n;
+  }
+  else if (V_FIN == *M_FIN + 10)
+  {
+    if (M_FIN == mapa + 10) { 
+        cout << "LIMITES LLENOS\n"; 
+        return; 
+    }
+    M_FIN++;
+    *M_FIN = new int[11];
+    V_FIN  = *M_FIN;
+    *V_FIN = n;
+  }
+  else { 
+      V_FIN++; 
+      *V_FIN = n; 
+  }
+}
+
+int cDeque::pop_front()
+{
+  if (!V_INI) { cout << "No hay elementos\n"; 
+    return -1; 
+  }
+  int ret;
+  if (V_INI == V_FIN)
+  {
+    ret = *V_INI;
+    V_INI = V_FIN = NULL;
+    delete[] *M_INI;
+  }
+  else if (V_INI == *M_INI + 10)
+  {
+    ret = *V_INI;
+    delete[] *M_INI;
+    M_INI++;
+    V_INI = *M_INI;
+  }
+  else { 
+      ret = *V_INI;
+      V_INI++; 
+  }
+  return ret;
+}
+
+int cDeque::pop_back()
+{
+  if (!V_FIN) { 
+      cout << "No hay elementos\n"; 
+      return -1; 
+  }
+  int ret;
+  if (V_INI == V_FIN)
+  {
+    ret = *V_INI;
+    V_INI = V_FIN = NULL;
+    delete[] *M_INI;
+  }
+  else if (V_FIN == *M_FIN)
+  {
+    ret = *V_FIN;
+    delete[] *M_FIN;
+    M_FIN--;
+    V_FIN = *M_FIN + 10;
+  }
+  else { 
+      ret = *V_FIN; 
+      V_FIN--; 
+  }
+  return ret;
+}
+
+int& cDeque::operator[](int id){
+    if (!V_INI) { 
+        cout << "No hay elementos\n"; 
+        return *V_INI; 
+    }
+    int elem_faltan = (V_INI - *M_INI);
+    int n_id = id + elem_faltan;
+    return *(*(M_INI + (n_id / 11)) + n_id % 11);
+}
+
+int precedencia(char op)
+{
+  if (op == '+' || op == '-') return 1;
+  if (op == '*' || op == '/') return 2;
+  return 0;
+}
+
+bool esOperador(char c) { 
+    return c=='+' || c=='-' || c=='*' || c=='/'; 
+}
+
+cDeque infija_a_postfija(const string& expr)
+{
+  cDeque salida;  
+  cDeque pila;     
+
+  int i = 0;
+  int n = expr.size();
+
+  while (i < n)
+  {
+    char c = expr[i];
+
+    
+    if (isdigit(c))
+    {
+      int num = 0;
+      while (i < n && isdigit(expr[i]))
+      {
+        num = num * 10 + (expr[i] - '0');
+        i++;
+      }
+      salida.push_back(num); 
+      continue;
+    }
+
+    
+    if (esOperador(c))
+    {
+      while (!pila.empty())
+      {
+        int tope = pila.pop_back();
+        char op_tope = (char)(-tope);
+        if (esOperador(op_tope) && precedencia(op_tope) >= precedencia(c))
+          salida.push_back(tope);   
+        else
+        {
+          pila.push_back(tope);     
+          break;
+        }
+      }
+      pila.push_back(-(int)c);     
+    }
+
+    
+    else if (c == '(')
+      pila.push_back(-(int)c);
+
+    
+    else if (c == ')')
+    {
+      while (!pila.empty())
+      {
+        int tope = pila.pop_back();
+        char op = (char)(-tope);
+        if (op == '(') break;
+        salida.push_back(tope);
+      }
+    }
+
+    i++;
+  }
+
+  while (!pila.empty())
+    salida.push_back(pila.pop_back());
+
+  return salida;  
+}
+
+int evaluar_postfija(cDeque& postfija)
+{
+  cDeque pila_op;  
+
+  while (!postfija.empty())
+  {
+    int token = postfija.pop_front();
+
+    if (token >= 0) 
+    {
+      pila_op.push_back(token);
+    }
+    else             
+    {
+      char op = (char)(-token);
+      int b = pila_op.pop_back();
+      int a = pila_op.pop_back();
+      int res;
+      switch (op)
+      {
+        case '+': res = a + b; break;
+        case '-': res = a - b; break;
+        case '*': res = a * b; break;
+        case '/': res = a / b; break;
+        default:  res = 0;
+      }
+      pila_op.push_back(res);
+    }
+  }
+
+  return pila_op.pop_back();
+}
+
+int main()
+{
+  string expr;
+  cout << "Ingrese expresion matematica: ";
+  cin >> expr;
+
+  cDeque postfija = infija_a_postfija(expr);
+  int resultado   = evaluar_postfija(postfija);
+
+  cout << "Resultado: " << resultado << endl;
+
+  return 0;
+}
