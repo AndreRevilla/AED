@@ -1,0 +1,106 @@
+#include <iostream>
+using namespace std;
+
+template<class T>
+struct CNode
+{
+    T value;
+    CNode<T>* next;
+
+    CNode(T v)
+    {
+        value = v;
+        next = 0;
+    }
+};
+
+template<class T>
+class CSortedList
+{
+public:
+    CSortedList();
+    ~CSortedList();
+
+    bool find(T x, CNode<T>**& p);
+    bool ins(T x);
+    bool rem(T x);
+    void print();
+
+private:
+    CNode<T>* head;
+};
+
+template<class T>
+CSortedList<T>::CSortedList()
+{
+    head = 0;
+}
+
+template<class T>
+CSortedList<T>::~CSortedList()
+{
+    // borrar nodos
+}
+
+template<class T>
+bool CSortedList<T>::find(T x, CNode<T>**& p)
+{
+    for (p = &head; *p && (*p)->value < x;
+         p = &((*p)->next));
+
+    return *p && (*p)->value == x;
+}
+
+template<class T>
+bool CSortedList<T>::ins(T x)
+{
+    CNode<T>** p;
+
+    if(find(x, p))
+        return false;
+
+    CNode<T>* t = new CNode<T>(x);
+
+    t->next = *p;
+    *p = t;
+
+    return true;
+}
+
+template<class T>
+bool CSortedList<T>::rem(T x)
+{
+    CNode<T>** p;
+
+    if(!find(x, p))
+        return false;
+
+    CNode<T>* t = *p;
+    *p = t->next;
+
+    delete t;
+
+    return true;
+}
+
+template<class T>
+void CSortedList<T>::print()
+{
+    for(CNode<T>* t = head; t; t = t->next)
+        cout << t->value << " ";
+
+    cout << "\n";
+}
+
+int main()
+{
+    CSortedList<int> l;
+
+    l.ins(3);
+    l.ins(14);
+    l.ins(7);
+    l.ins(11);
+
+    l.print();
+    
+}
