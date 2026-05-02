@@ -2,115 +2,133 @@
 using namespace std;
 
 template<class T>
-struct CNode
-{
-	T value;
-	CNode<T>* next;
-	CNode(T v)
-	{
-		value = v;
-		next = 0;
-	}
-};
-
-template<class T>
 struct asc
 {
-	bool operator()(T a, T b)
-	{
-		return a < b;
-	}
+    bool operator()(T a, T b)
+    {
+        return a < b;
+    }
 };
 
 template<class T>
 struct des
 {
-	bool operator()(T a, T b)
-	{
-		return a > b;
-	}
+    bool operator()(T a, T b)
+    {
+        return a > b;
+    }
+};
+
+template<class T>
+struct CNode
+{
+    T value;
+    CNode<T>* next;
+
+    CNode(T v)
+    {
+        value = v;
+        next = 0;
+    }
 };
 
 template<class T, class O>
 class CSortedList
 {
 public:
-	CSortedList();
-	~CSortedList();
-	bool find(T x, CNode<T>**& p);  // CNode<T> sin O
-	bool ins(T x);
-	bool rem(T x);
-	void print();
+    CSortedList();
+    ~CSortedList();
+
+    bool find(T x, CNode<T>**& p);
+    bool ins(T x);
+    bool rem(T x);
+    void print();
+
 private:
-	CNode<T>* head;
+    CNode<T>* head;
 };
 
 template<class T, class O>
 CSortedList<T,O>::CSortedList()
 {
-	head = 0;
+    head = 0;
 }
 
 template<class T, class O>
 CSortedList<T,O>::~CSortedList()
 {
-	CNode<T>* t;
-	while(head) {
-		t = head;
-		head = head->next;
-		delete t;
-	}
+    CNode<T>* t;
+    while(head) {
+        t = head;
+        head = head->next;
+        delete t;
+    }
 }
 
 template<class T, class O>
 bool CSortedList<T,O>::find(T x, CNode<T>**& p)
 {
-	for (p = &head; *p && O()((*p)->value, x);
-	        p = &((*p)->next));
-	return *p && (*p)->value == x;
+    for (p = &head; *p && O()((*p)->value, x);
+         p = &((*p)->next));
+
+    return *p && (*p)->value == x;
 }
 
 template<class T, class O>
 bool CSortedList<T,O>::ins(T x)
 {
-	CNode<T>** p;
-	if(find(x, p))
-		return false;
-	CNode<T>* t = new CNode<T>(x);
-	t->next = *p;
-	*p = t;
-	return true;
+    CNode<T>** p;
+
+    if(find(x, p))
+        return false;
+
+    CNode<T>* t = new CNode<T>(x);
+
+    t->next = *p;
+    *p = t;
+
+    return true;
 }
 
-template<class T, class O>
+template<class T,class O>
 bool CSortedList<T,O>::rem(T x)
 {
-	CNode<T>** p;
-	if(!find(x, p))
-		return false;
-	CNode<T>* t = *p;
-	*p = t->next;
-	delete t;
-	return true;
+    CNode<T>** p;
+
+    if(!find(x, p))
+        return false;
+
+    CNode<T>* t = *p;
+    *p = t->next;
+
+    delete t;
+
+    return true;
 }
 
 template<class T, class O>
 void CSortedList<T,O>::print()
 {
-	for(CNode<T>* t = head; t; t = t->next)
-		cout << t->value << " ";
-	cout << "\n";
+    for(CNode<T>* t = head; t; t = t->next)
+        cout << t->value << " ";
+
+    cout << "\n";
 }
 
 int main()
 {
-	CSortedList<int,des<int>> l;
+    CSortedList<int,asc<int>> l;
+    CSortedList<string,des<string>> c;
+    l.ins(3);
+    l.ins(14);
+    l.ins(7);
+    l.ins(11);
 
-	l.ins(3);
-	l.ins(14);
-	l.ins(7);
-	l.ins(11);
-
-	l.print();
-
+    l.print();
+    
+    c.ins("avion");
+    c.ins("casa");
+    c.ins("bota");
+    c.print();
+    
 }
