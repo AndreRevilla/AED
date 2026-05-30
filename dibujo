@@ -1,0 +1,351 @@
+#include <iostream>
+#include <stack>
+#include <queue>
+#include <SFML/Graphics.hpp>
+#include <cmath>
+#include <vector>
+#include <string>
+
+struct Node
+{
+    int value;
+    Node* nodes[2];
+    // Constructor agregado para evitar miembros no inicializados
+    Node(int v) : value(v) { nodes[0] = nodes[1] = nullptr; }
+};
+
+// Estructura auxiliar para graficar: guarda posición de cada nodo
+struct NodeLayout
+{
+    Node*  node;
+    float  x, y;
+    Node*  parent;
+};
+
+class CBinTree
+{
+public:
+    CBinTree();
+    ~CBinTree();
+    bool find(int x, Node**& p);
+    bool ins(int x);
+    bool rem(int x);
+    Node** rep(Node** p);
+    void print();
+
+    int height(Node* n);
+
+    // ── Graficación SFML ──────────────────────────────────────────
+    void draw();   // abre la ventana y dibuja el árbol
+
+    void levels(Node* n);
+    void inorder_stack(Node* n);
+    void preorder_stack(Node* n);
+    void posorder_stack(Node* n);
+    void reverse_stack(Node* n);
+    void inorder(Node* n);
+    void preorder(Node* n);
+    void posorder(Node* n);
+    void reverse(Node* n);
+
+private:
+    Node* root;
+    bool  brep;
+
+    // ── Helpers de graficación ────────────────────────────────────
+    // Calcula posiciones (x,y) de cada nodo y las almacena en 'layout'
+    void computeLayout(Node* n, int depth, float xMin, float xMax,
+                       Node* parent, std::vector<NodeLayout>& layout);
+};
+
+// ─────────────────────────────────────────────────────────────────
+//  Implementación de la clase
+// ─────────────────────────────────────────────────────────────────
+
+CBinTree::CBinTree()  { root = nullptr; brep = false; }
+CBinTree::~CBinTree() {}
+
+bool CBinTree::find(int x, Node**& p)
+{
+    for (p = &root; *p && (*p)->value != x;
+         p = &( (*p)->nodes[ x > (*p)->value ] ));
+    return *p && (*p)->value == x;
+}
+
+bool CBinTree::ins(int x)
+{
+    Node** p;
+    if (find(x, p)) return false;
+    *p = new Node(x);
+    return true;
+}
+
+bool CBinTree::rem(int x)
+{
+    Node** p;
+    if (!find(x, p)) return false;
+
+    if ((*p)->nodes[0] && (*p)->nodes[1])
+    {
+        Node** q = rep(p);
+        (*p)->value = (*q)->value;
+        p = q;
+    }
+
+    Node* t = *p;
+    *p = (*p)->nodes[ (*p)->nodes[1] != nullptr ];
+    delete t;
+    return true;
+}
+
+Node** CBinTree::rep(Node** p)
+{
+    Node** q;
+    for (q = &( (*p)->nodes[!brep] ); (*q)->nodes[brep] != nullptr;
+         q = &( (*q)->nodes[brep] ));
+    brep = !brep;
+    return q;
+}
+
+void CBinTree::print()
+{
+    std::cout << "inorder  "; inorder(root);  std::cout << "\n";
+    std::cout << "preorder "; preorder(root); std::cout << "\n";
+    std::cout << "posorder "; posorder(root); std::cout << "\n";
+    std::cout << "reverse  "; reverse(root);  std::cout << "\n";
+}
+
+int CBinTree::height(Node* n)
+{
+    if (!n) return 0;
+    int lh = height(n->nodes[0]);
+    int rh = height(n->nodes[1]);
+    return 1 + (lh > rh ? lh : rh);
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  Calcula posición (x, y) de cada nodo recursivamente
+//  Reparte el espacio horizontal disponible [xMin, xMax] entre los
+//  dos hijos; el nodo actual queda en el centro.
+// ─────────────────────────────────────────────────────────────────
+void CBinTree::computeLayout(Node* n, int depth,
+                             float xMin, float xMax,
+                             Node* parent,
+                             std::vector<NodeLayout>& layout)
+{
+    if (!n) return;
+
+    const float LEVEL_HEIGHT = 90.f;   // píxeles entre niveles
+    const float TOP_MARGIN   = 60.f;
+
+    float x = (xMin + xMax) / 2.f;
+    float y = TOP_MARGIN + depth * LEVEL_HEIGHT;
+
+    layout.push_back({ n, x, y, parent });
+
+    float mid = (xMin + xMax) / 2.f;
+    computeLayout(n->nodes[0], depth + 1, xMin, mid,     n, layout);
+    computeLayout(n->nodes[1], depth + 1, mid,  xMax,    n, layout);
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  draw()  –  abre ventana SFML y pinta el árbol
+// ─────────────────────────────────────────────────────────────────
+void CBinTree::draw()
+{
+    // ── Dimensiones de la ventana ─────────────────────────────────
+    const unsigned WIN_W = 1000;
+    const unsigned WIN_H = 700;
+    const float    NODE_R = 22.f;       // radio del círculo
+
+    // ── Colores del diseño ────────────────────────────────────────
+    sf::Color bgColor      (15,  17,  26);   // fondo oscuro azul-negro
+    sf::Color edgeColor    (80, 120, 200, 180);
+    sf::Color circleColor  (30,  60, 120);
+    sf::Color circleOutline(100, 160, 255);
+    sf::Color textColor    (220, 235, 255);
+    sf::Color rootColor    (180,  80,  40);   // raíz destacada
+
+    // ── Layout ───────────────────────────────────────────────────
+    std::vector<NodeLayout> layout;
+    layout.reserve(64);
+    computeLayout(root, 0, 0.f, (float)WIN_W, nullptr, layout);
+
+    // ── Fuente ───────────────────────────────────────────────────
+    sf::Font font;
+    bool fontLoaded = font.loadFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf");
+    if (!fontLoaded)
+        fontLoaded = font.loadFromFile("/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf");
+
+    // ── Ventana ───────────────────────────────────────────────────
+    sf::RenderWindow window(
+        sf::VideoMode(WIN_W, WIN_H),
+        "Arbol Binario de Busqueda",
+        sf::Style::Titlebar | sf::Style::Close);
+    window.setFramerateLimit(60);
+
+    // Precomputar mapa nodo->posición para dibujar aristas
+    std::unordered_map<Node*, sf::Vector2f> pos;
+    for (auto& nl : layout)
+        pos[nl.node] = { nl.x, nl.y };
+
+    while (window.isOpen())
+    {
+        sf::Event event;
+        while (window.pollEvent(event))
+            if (event.type == sf::Event::Closed)
+                window.close();
+
+        window.clear(bgColor);
+
+        // ── 1. Dibujar aristas (líneas) ───────────────────────────
+        for (auto& nl : layout)
+        {
+            if (!nl.parent) continue;
+
+            sf::Vector2f pPos = pos[nl.parent];
+            sf::Vector2f cPos = { nl.x, nl.y };
+
+            // Línea con grosor usando rectángulo rotado
+            sf::Vector2f dir   = cPos - pPos;
+            float        len   = std::sqrt(dir.x*dir.x + dir.y*dir.y);
+            float        angle = std::atan2(dir.y, dir.x) * 180.f / 3.14159f;
+
+            sf::RectangleShape edge(sf::Vector2f(len, 2.5f));
+            edge.setOrigin(0.f, 1.25f);
+            edge.setPosition(pPos);
+            edge.setRotation(angle);
+            edge.setFillColor(edgeColor);
+            window.draw(edge);
+        }
+
+        // ── 2. Dibujar nodos (círculos + texto) ───────────────────
+        for (auto& nl : layout)
+        {
+            // Círculo
+            sf::CircleShape circle(NODE_R);
+            circle.setOrigin(NODE_R, NODE_R);
+            circle.setPosition(nl.x, nl.y);
+            circle.setFillColor(nl.parent == nullptr ? rootColor : circleColor);
+            circle.setOutlineThickness(2.5f);
+            circle.setOutlineColor(circleOutline);
+            window.draw(circle);
+
+            // Texto con el valor
+            if (fontLoaded)
+            {
+                std::string label = std::to_string(nl.node->value);
+                sf::Text text(label, font, 15);
+                text.setFillColor(textColor);
+                sf::FloatRect tb = text.getLocalBounds();
+                text.setOrigin(tb.left + tb.width/2.f, tb.top + tb.height/2.f);
+                text.setPosition(nl.x, nl.y);
+                window.draw(text);
+            }
+        }
+
+        // ── 3. Leyenda ────────────────────────────────────────────
+        if (fontLoaded)
+        {
+            sf::Text legend("Arbol Binario de Busqueda  |  Raiz en naranja  |  Cierra para salir",
+                            font, 13);
+            legend.setFillColor(sf::Color(120, 140, 180));
+            legend.setPosition(10.f, (float)WIN_H - 28.f);
+            window.draw(legend);
+        }
+
+        window.display();
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────
+//  Recorridos existentes (sin cambios)
+// ─────────────────────────────────────────────────────────────────
+
+void CBinTree::levels(Node* n)
+{
+    std::queue<Node*> q;
+    q.push(root);
+    while (!q.empty())
+    {
+        Node* cur = q.front(); q.pop();
+        std::cout << cur->value << " ";
+        if (cur->nodes[0]) q.push(cur->nodes[0]);
+        if (cur->nodes[1]) q.push(cur->nodes[1]);
+    }
+}
+
+void CBinTree::inorder_stack(Node* n)
+{
+    std::stack< std::pair<int, Node*> > s;
+    s.push(std::make_pair(0, root));
+    while (!s.empty())
+    {
+        switch (s.top().first)
+        {
+            case 0:
+                if (s.top().second == nullptr) { s.pop(); break; }
+                s.top().first = 1;
+                s.push(std::make_pair(0, s.top().second->nodes[0]));
+                break;
+            case 1:
+                std::cout << s.top().second->value << " ";
+                s.top().first = 2;
+                s.push(std::make_pair(0, s.top().second->nodes[1]));
+                break;
+            case 2:
+                s.pop();
+                break;
+        }
+    }
+}
+
+void CBinTree::preorder_stack(Node* n)  {}
+void CBinTree::posorder_stack(Node* n) {}
+void CBinTree::reverse_stack(Node* n)  {}
+
+void CBinTree::inorder(Node* n)
+{
+    if (!n) return;
+    inorder(n->nodes[0]);
+    std::cout << n->value << " ";
+    inorder(n->nodes[1]);
+}
+
+void CBinTree::preorder(Node* n)
+{
+    if (!n) return;
+    std::cout << n->value << " ";
+    preorder(n->nodes[0]);
+    preorder(n->nodes[1]);
+}
+
+void CBinTree::posorder(Node* n)
+{
+    if (!n) return;
+    posorder(n->nodes[0]);
+    posorder(n->nodes[1]);
+    std::cout << n->value << " ";
+}
+
+void CBinTree::reverse(Node* n)
+{
+    if (!n) return;
+    reverse(n->nodes[1]);
+    std::cout << n->value << " ";
+    reverse(n->nodes[0]);
+}
+
+// ─────────────────────────────────────────────────────────────────
+int main()
+{
+    CBinTree t;
+    t.ins(61);
+    t.ins(50); t.ins(80);
+    t.ins(33); t.ins(55); t.ins(65); t.ins(90);
+    t.ins(66);
+    t.print();
+
+    t.draw();   // ← abre la ventana gráfica
+    return 0;
+}
