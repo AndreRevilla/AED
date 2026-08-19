@@ -1,0 +1,99 @@
+#include <iostream>
+using namespace std;
+
+template<class T>
+struct asc
+{
+    bool operator()(T a, T b)
+    {
+        return a < b;
+    }
+};
+
+template<class T>
+struct des
+{
+    bool operator()(T a, T b)
+    {
+        return a > b;
+    }
+};
+
+template<class T, class O, int N=10>
+class CSortedList{
+        int tam=N;
+        int elem=0;
+        T arr[N];
+        
+    public:
+        bool find(T x, T *p);
+        bool add(T x);
+        bool del(T x);
+        void print();
+};
+
+template<class T, class O>
+bool CSortedList<T,O>::find(T x, T *p)
+{
+    for (p = arr; *p && O()(*p, x); p++)
+        return *p && (*p)->value == x;
+}
+
+template<class T, class O>
+bool CSortedList<T,O>::ins(T x)
+{
+    CNode<T>** p;
+
+    if(find(x, p))
+        return false;
+
+    CNode<T>* t = new CNode<T>(x);
+
+    t->next = *p;
+    *p = t;
+
+    return true;
+}
+
+template<class T,class O>
+bool CSortedList<T,O>::rem(T x)
+{
+    CNode<T>** p;
+
+    if(!find(x, p))
+        return false;
+
+    CNode<T>* t = *p;
+    *p = t->next;
+
+    delete t;
+
+    return true;
+}
+
+template<class T, class O>
+void CSortedList<T,O>::print()
+{
+    for(CNode<T>* t = head; t; t = t->next)
+        cout << t->value << " ";
+
+    cout << "\n";
+}
+
+int main()
+{
+    CSortedList<int,asc<int>> l;
+    CSortedList<string,des<string>> c;
+    l.ins(3);
+    l.ins(14);
+    l.ins(7);
+    l.ins(11);
+
+    l.print();
+    
+    c.ins("avion");
+    c.ins("casa");
+    c.ins("bota");
+    c.print();
+    
+}
