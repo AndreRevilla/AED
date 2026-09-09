@@ -1,70 +1,71 @@
 #include <iostream>
 using namespace std;
 
-struct divs{
-    bool operator()(int a){
-        return !(a%3);
+struct divs {
+    bool operator()(int a) {
+        return !(a % 3);
     }
 };
 
-void swap(int *a,int *b){
+void swap(int* a, int* b) {
     int tmp;
-    tmp=*a;
-    *a=*b;
-    *b=tmp;
+    tmp = *a;
+    *a = *b;
+    *b = tmp;
 }
 
 template <class O>
 struct util {
 
-void split(int *ini, int *fin){
-    O vf;
-    int k=0;
-    for(int *i=ini;i<fin;i++){
-        if(vf(*i)){
-            swap(*i,*fin);
-            fin--;
-            i=ini;
-        }
-        k++;
-    }
-    cout<<endl;
-}
-    
-void merge(int *p, int *q){
-    int *a=p;
-    int tam=(q-p)*2; 
-    
-    for (int *r = a; r < a+tam/2; r++) {
-        p=r;
-        while (p<q) {
-            if (*p > *q) {
-                int temp = *p;
-                *p = *q;
-                *q = temp;
-                }
-            p++;
+    void split(int* ini, int* fin) {
+        O vf;
+        int k = 0;
+        for (int* i = ini;i < fin;i++) {
+            if (vf(*i)) {
+                swap(*i, *fin);
+                fin--;
+                i = ini;
             }
-        q++;
+            k++;
+        }
+        cout << endl;
+    }
+
+    void merge(int* p, int* q) {
+        int* a = p;
+        int tam = (q - p) * 2;
+
+        for (int* r = a; r < a + tam / 2; r++) {
+            p = r;
+            while (p < q) {
+                if (*p > *q) {
+                    int temp = *p;
+                    *p = *q;
+                    *q = temp;
+                }
+                p++;
+            }
+            q++;
         }
     }
 };
 
-int main(){
-    int A[]={1,2,5,7,30,3,5,11,23,25};
-    int tam = sizeof(A)/sizeof(A[0]);
-    util<divs> u;
-    
-    u.merge(A,A+tam/2);
-    
-    for (int *r = A; r < A + tam; r++) {
+void print(int* t, int tam) {
+    for (int* r = t; r < t + tam; r++) {
         cout << *r << " ";
     }
+}
 
-    u.split(A,A+tam-1);
-    for (int *r = A; r < A + tam; r++) {
-        cout << *r << " ";
-    }    
-    
+int main() {
+    int A[] = { 1,2,5,7,30,3,5,11,23,25 };
+    int tam = sizeof(A) / sizeof(A[0]);
+    util<divs> u;
+
+    u.merge(A, A + tam / 2);
+    print(A, tam);
+
+    u.split(A, A + tam - 1);
+    print(A, tam);
+
     return 0;
 }
