@@ -28,7 +28,6 @@ void split(int *ini, int *fin){
         }
         k++;
     }
-    cout<<k;
     cout<<endl;
 }
     
