@@ -1,0 +1,60 @@
+#include <iostream>
+using namespace std;
+
+struct divs{
+    bool operator()(int a){
+        return !(a%3);
+    }
+};
+
+template <class O>
+struct util {
+    
+    void dividir(int *ini, int *fin) {
+        O vf;
+        int k = 0;
+        for (int *i = ini; i < fin; i++) {
+            if (vf(*i)) {
+                int tmp = *i;
+                *i = *fin;
+                *fin = tmp;
+                fin--;
+                i = ini;
+            }
+            k++;
+        }
+    }
+
+    void merge(int *ini, int *mid, int *fin) {
+        int *q = mid;
+        for (int *r = ini; r < mid && q < fin; r++) {
+            int *p = r;
+            while (p < q) {
+                if (*p > *q) {
+                    swap(p, q);
+                }
+                p++;
+            }
+            q++;
+        }
+    }
+};
+
+int main()
+{
+    int A[10] = {1,2,3,4,5,6,7,8,9,10};
+
+    util<divs> u;
+    u.dividir(A, A + 9);
+
+    for (int *p = A; p < A + 10; p++) 
+        cout << *p << " ";
+    cout << endl;
+
+    u.merge(A,A+4,A+9);
+    for (int *p = A; p < A + 10; p++) 
+        cout << *p << " ";
+    cout << endl;
+    
+    return 0;
+}
