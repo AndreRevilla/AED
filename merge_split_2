@@ -18,33 +18,50 @@ template <class O>
 struct util {
 
     void split(int* ini, int* fin) {
-        O vf;
-        int k = 0;
-        for (int* i = ini;i < fin;i++) {
-            if (vf(*i)) {
-                swap(*i, *fin);
-                fin--;
-                i = ini;
+    O vf;
+
+    int* pos = ini;
+
+    for (int* i = ini; i < fin; i++) {
+
+        if (vf(*i)) {
+
+            int temp = *i;
+            int* r = i;
+
+            while (r > pos) {
+                *r = *(r - 1);
+                r--;
             }
-            k++;
+
+            *pos = temp;
+            pos++;
         }
-        cout << endl;
     }
+}
 
-    void merge(int* p, int* q) {
-        int* a = p;
-        int tam = (q - p) * 2;
+    void merge(int* ini, int* mid, int* fin) {
+    int* p = ini;
+    int* q = mid;
 
-        for (int* r = a; r < a + tam / 2; r++) {
-            p = r;
-            while (p < q) {
-                if (*p > *q) {
-                    int temp = *p;
-                    *p = *q;
-                    *q = temp;
+        while (q < fin) {
+    
+            if (p < mid) {
+                int* r = p;
+    
+                while (r < q) {
+                    if (*r > *q) {
+                        int temp = *r;
+                        *r = *q;
+                        *q = temp;
+                    }
+    
+                    r++;
                 }
+    
                 p++;
             }
+    
             q++;
         }
     }
@@ -54,18 +71,22 @@ void print(int* t, int tam) {
     for (int* r = t; r < t + tam; r++) {
         cout << *r << " ";
     }
+    
+    cout<<endl;
 }
 
 int main() {
     int A[] = { 1,2,5,7,30,3,5,11,23,25 };
     int tam = sizeof(A) / sizeof(A[0]);
     util<divs> u;
-
-    u.merge(A, A + tam / 2);
+    
     print(A, tam);
-
-    u.split(A, A + tam - 1);
+    
+    u.merge(A, A + tam / 2, A+tam);
     print(A, tam);
-
+    
+    u.split(A,A+tam);
+    print(A, tam);
+    
     return 0;
 }
