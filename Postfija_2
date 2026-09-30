@@ -1,0 +1,343 @@
+#include <iostream>
+#include <assert.h>
+#include <string>
+#include <sstream>
+#include <cctype>
+using namespace std;
+
+template<class T>
+class CVector
+{
+public:
+    CVector(int s);
+    ~CVector();
+
+    void push_front(T x);
+    void pop_front();
+    void push_back(T x);
+    void pop_back();
+    void expand();
+    void collapse();
+    T& operator[](int i);
+    T& front();
+    T& back();
+    bool vacio();
+    void print();
+
+private:
+    T* vec;
+    int nelem, size;
+};
+
+
+template<class T>
+CVector<T>::CVector(int s)
+{
+    size = s;
+    vec = new T[size];
+    nelem = 0;
+}
+
+
+template<class T>
+CVector<T>::~CVector()
+{
+    delete[] vec;
+}
+
+
+template<class T>
+void CVector<T>::expand()
+{
+    T* q = new T[size * 2];
+
+    for (int i = 0; i < nelem; ++i)
+        q[i] = vec[i];
+
+    delete[] vec;
+
+    vec = q;
+    size *= 2;
+}
+
+
+template<class T>
+void CVector<T>::collapse()
+{}
+
+template<class T>
+void CVector<T>::push_front(T x)
+{
+    if (nelem == size)
+        expand();
+
+    for (int i = nelem; i > 0; i--)
+        vec[i] = vec[i - 1];
+
+    vec[0] = x;
+    nelem++;
+}
+
+
+template<class T>
+void CVector<T>::pop_front()
+{
+    if (nelem == 0)
+        return;
+
+    for (int i = 0; i < nelem - 1; ++i)
+        vec[i] = vec[i + 1];
+
+    nelem--;
+}
+
+
+template<class T>
+void CVector<T>::push_back(T x)
+{
+    if (nelem == size)
+        expand();
+
+    vec[nelem] = x;
+    nelem++;
+}
+
+
+template<class T>
+void CVector<T>::pop_back()
+{
+    if (nelem == 0)
+        return;
+
+    nelem--;
+}
+
+
+template<class T>
+T& CVector<T>::operator[](int i)
+{
+    assert(i >= 0 && i < nelem);
+
+    return vec[i];
+}
+
+
+template<class T>
+T& CVector<T>::front()
+{
+    assert(nelem > 0);
+
+    return vec[0];
+}
+
+
+template<class T>
+T& CVector<T>::back()
+{
+    assert(nelem > 0);
+
+    return vec[nelem - 1];
+}
+
+
+template<class T>
+bool CVector<T>::vacio()
+{
+    return nelem == 0;
+}
+
+
+template<class T>
+void CVector<T>::print()
+{
+    for (int i = 0; i < nelem; ++i)
+        cout << vec[i] << " ";
+}
+
+int prioridad(char operador)
+{
+    if (operador == '+' || operador == '-')
+        return 1;
+
+    if (operador == '*' || operador == '/')
+        return 2;
+
+    return 0;
+}
+
+void infijaPostfija(CVector<char>& ingreso, CVector<char>& despliegue, CVector<char>& pila){
+    while (!ingreso.vacio())
+    {
+        char c = ingreso.front();
+        ingreso.pop_front();
+
+        if (isdigit(c))
+        {
+            despliegue.push_back(c);
+        }
+
+        else if (c == '(')
+        {
+            pila.push_back(c);
+        }
+
+        else if (c == ')')
+        {
+            while (!pila.vacio() && pila.back() != '(')
+            {
+                despliegue.push_back(pila.back());
+                pila.pop_back();
+            }
+
+            if (!pila.vacio())
+                pila.pop_back();
+        }
+
+        else if (c == '+' || c == '-' || c == '*' || c == '/')
+        {
+            while (!pila.vacio() &&
+                   pila.back() != '(' &&
+                   prioridad(pila.back()) >= prioridad(c))
+            {
+                despliegue.push_back(pila.back());
+                pila.pop_back();
+            }
+
+            pila.push_back(c);
+        }
+    }
+
+    while (!pila.vacio())
+    {
+        despliegue.push_back(pila.back());
+        pila.pop_back();
+    }
+}
+
+int operar(int a, int b, char operador)
+{
+    switch (operador)
+    {
+        case '+':
+            return a + b;
+
+        case '-':
+            return a - b;
+
+        case '*':
+            return a * b;
+
+        case '/':
+            return a / b;
+    }
+
+    return 0;
+}
+
+int evaluarPostfija(CVector<string>& postfija)
+{
+    CVector<int> pila(5);
+
+    while (!postfija.vacio())
+    {
+        string dato = postfija.front();
+        postfija.pop_front();
+
+        if (dato == "+" ||
+            dato == "-" ||
+            dato == "*" ||
+            dato == "/")
+        {
+
+            int b = pila.back();
+            pila.pop_back();
+
+            int a = pila.back();
+            pila.pop_back();
+
+            int resultado = operar(a, b, dato[0]);
+
+            pila.push_back(resultado);
+        }
+
+        else
+        {
+            int numero = stoi(dato);
+
+            pila.push_back(numero);
+        }
+    }
+
+
+    return pila.back();
+}
+
+void copiarPostfija(CVector<char>& despliegue,
+                    CVector<string>& postfija)
+{
+    while (!despliegue.vacio())
+    {
+        char c = despliegue.front();
+        despliegue.pop_front();
+
+        string dato(1, c);
+
+        postfija.push_back(dato);
+    }
+}
+
+int main(){
+
+    CVector<char> ingreso(5);
+    CVector<char> despliegue(5);
+    CVector<char> pila(5);
+
+    string expresion = "(3+5)*(7-4)";
+
+    for (int i = 0; i < expresion.size(); i++)
+        ingreso.push_back(expresion[i]);
+
+    cout << "Expresion Infija:" << endl;
+    ingreso.print();
+    cout << endl;
+
+    infijaPostfija(ingreso, despliegue, pila);
+
+    cout << endl;
+    cout << "Expresion Postfija:" << endl;
+
+    despliegue.print();
+    cout << endl;
+    
+
+    CVector<string> postfija(5);
+
+    copiarPostfija(despliegue, postfija);
+
+    cout << endl;
+    cout << "Resultado:" << endl;
+    cout << evaluarPostfija(postfija) << endl;
+
+
+    CVector<string> ejemplo2(5);
+
+    ejemplo2.push_back("12");
+    ejemplo2.push_back("5");
+    ejemplo2.push_back("+");
+    ejemplo2.push_back("7");
+    ejemplo2.push_back("4");
+    ejemplo2.push_back("-");
+    ejemplo2.push_back("*");
+
+    cout << endl;
+    cout << "Postfija con mas de 1 digito:" << endl;
+    ejemplo2.print();
+    cout << endl;
+    
+    cout << endl;
+    cout << "Resultado:" << endl;
+    cout << evaluarPostfija(ejemplo2) << endl;
+
+
+    return 0;
+}
