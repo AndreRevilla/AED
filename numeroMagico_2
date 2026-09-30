@@ -1,0 +1,206 @@
+#include <iostream>
+#include <assert.h>
+#include <string>
+using namespace std;
+
+template<class T>
+class CVector
+{
+public:
+    CVector(int s);
+    ~CVector();
+
+    void push_front(T x);
+    void pop_front();
+
+    void push_back(T x);
+    void pop_back();
+
+    void expand();
+    void collapse();
+
+    T& operator[](int i);
+    T& front();
+    T& back();
+
+    void print();
+
+private:
+    T* vec;
+    int nelem, size;
+};
+
+
+template<class T>
+CVector<T>::CVector(int s)
+{
+    size = s;
+    vec = new T[size];
+    nelem = 0;
+}
+
+
+template<class T>
+CVector<T>::~CVector()
+{
+    delete[] vec;
+}
+
+
+template<class T>
+void CVector<T>::expand()
+{
+    T* q = new T[size * 2];
+
+    for (int i = 0; i < nelem; ++i)
+        q[i] = vec[i];
+
+    delete[] vec;
+
+    vec = q;
+    size *= 2;
+}
+
+
+template<class T>
+void CVector<T>::collapse()
+{
+}
+
+
+template<class T>
+void CVector<T>::push_front(T x)
+{
+    if (nelem == size)
+        expand();
+
+    for (int i = nelem; i > 0; i--)
+        vec[i] = vec[i - 1];
+
+    vec[0] = x;
+    nelem++;
+}
+
+
+template<class T>
+void CVector<T>::pop_front()
+{
+    if (nelem == 0)
+        return;
+
+    for (int i = 0; i < nelem - 1; ++i)
+        vec[i] = vec[i + 1];
+
+    nelem--;
+}
+
+
+template<class T>
+void CVector<T>::push_back(T x)
+{
+    if (nelem == size)
+        expand();
+
+    vec[nelem] = x;
+    nelem++;
+}
+
+
+template<class T>
+void CVector<T>::pop_back()
+{
+    if (nelem == 0)
+        return;
+
+    nelem--;
+}
+
+
+template<class T>
+T& CVector<T>::operator[](int i)
+{
+    assert(i >= 0 && i < nelem);
+
+    return *(vec + i);
+}
+
+
+template<class T>
+T& CVector<T>::front()
+{
+    assert(nelem > 0);
+
+    return *vec;
+}
+
+
+template<class T>
+T& CVector<T>::back()
+{
+    assert(nelem > 0);
+
+    return *(vec + nelem - 1);
+}
+
+
+template<class T>
+void CVector<T>::print()
+{
+    for (int i = 0; i < nelem; ++i)
+        cout << vec[i] << " ";
+}
+
+int operacionMagica(string numero){
+    CVector<int> pila(numero.length());
+
+    for (int i = 0; i < numero.length(); i++)
+    {
+        int digito = numero[i] - '0';
+
+        pila.push_back(digito);
+    }
+
+    cout << endl;
+    cout << "Elementos de la pila:";
+    pila.print();
+
+    cout << endl;
+
+    int suma = 0;
+
+    for (int i = 0; i < numero.length(); i++)
+    {
+        int digito = pila.back();
+        suma += digito;
+        pila.pop_back();
+    }
+
+    cout << endl;
+    cout << "Suma de los digitos: " << suma << endl;
+
+    int faltante = (9 - (suma % 9)) % 9;
+
+    return faltante;
+}
+
+int main()
+{
+    string numero;
+
+    cout << "Escribe el numero magico multiplicado por 27 y sin un digito cualquiera:" <<endl;
+    cin >> numero;
+
+    int faltante = operacionMagica(numero);
+    
+    cout << endl;
+    cout <<"El digito fantante es: ";
+
+    if (faltante == 0){
+        cout << "0 o 9";
+    }
+    else{
+        cout << faltante;
+    }
+
+    return 0;
+}
