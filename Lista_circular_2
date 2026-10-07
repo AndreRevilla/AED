@@ -1,0 +1,198 @@
+#include <iostream>
+#include <string>
+using namespace std;
+
+struct CNode
+{
+    CNode(string v)
+    {
+        value = v;
+        next = nullptr;
+    }
+
+    string value;
+    CNode* next;
+};
+
+
+class CCList
+{
+public:
+    CCList(int n);
+    ~CCList();
+
+    void kill(int numero);
+    void print();
+
+private:
+    CNode* head;
+    int nelem;
+
+    string convertirLetra(int n);
+};
+
+
+string CCList::convertirLetra(int n)
+{
+    string resultado = "";
+
+    while (n > 0)
+    {
+        n--;
+
+        char letra = 'A' + (n % 26);
+
+        resultado = letra + resultado;
+
+        n = n / 26;
+    }
+
+    return resultado;
+}
+
+
+CCList::CCList(int n)
+{
+    head = nullptr;
+    nelem = 0;
+
+    if (n <= 0)
+        return;
+
+
+    head = new CNode(convertirLetra(1));
+
+    CNode* ultimo = head;
+
+    nelem++;
+
+
+    for (int i = 2; i <= n; i++)
+    {
+        CNode* nuevo = new CNode(convertirLetra(i));
+
+        ultimo->next = nuevo;
+
+        ultimo = nuevo;
+
+        nelem++;
+    }
+
+
+    ultimo->next = head;
+}
+
+
+CCList::~CCList()
+{
+    if (head == nullptr)
+        return;
+
+    CNode* actual = head->next;
+
+    while (actual != head)
+    {
+        CNode* temp = actual;
+
+        actual = actual->next;
+
+        delete temp;
+    }
+
+    delete head;
+
+    head = nullptr;
+}
+
+
+void CCList::print()
+{
+    if (head == nullptr)
+    {
+        cout << "Lista vacia\n";
+        return;
+    }
+
+    CNode* actual = head;
+
+    do
+    {
+        cout << actual->value << " ";
+
+        actual = actual->next;
+
+    } while (actual != head);
+
+    cout << endl;
+}
+
+
+void CCList::kill(int numero)
+{
+    if (head == nullptr || numero <= 0)
+        return;
+
+
+    CNode* actual = head;
+
+    CNode* anterior = head;
+
+    while (anterior->next != head)
+        anterior = anterior->next;
+
+
+    while (nelem > 0)
+    {
+
+        for (int i = 1; i < numero; i++)
+        {
+            anterior = actual;
+            actual = actual->next;
+        }
+
+
+        cout << actual->value << " ";
+
+        if (nelem == 1)
+        {
+            delete actual;
+
+            head = nullptr;
+
+            nelem--;
+
+            break;
+        }
+
+        if (actual == head)
+            head = actual->next;
+
+        anterior->next = actual->next;
+
+
+        CNode* temp = actual;
+
+        actual = actual->next;
+
+        delete temp;
+
+        nelem--;
+    }
+
+    cout << endl;
+}
+
+
+int main()
+{
+    CCList mia(8);
+    mia.print();
+    
+    cout<<endl;
+    cout<<"kill"<<endl;
+    cout<<endl;
+    
+    mia.kill(3);
+
+    return 0;
+}
