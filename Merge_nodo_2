@@ -1,0 +1,125 @@
+#include <iostream>
+using namespace std;
+
+template<class T>
+struct CNode
+{
+    T valor;
+    CNode<T>* next;
+
+    CNode(T v)
+    {
+        valor = v;
+        next = 0;
+    }
+};
+
+
+template<class T>
+class Merge
+{
+public:
+    void ejecutar(CNode<T>*& L1, CNode<T>*& L2);
+    void print(CNode<T>* C);
+};
+
+
+template<class T>
+void Merge<T>::ejecutar(CNode<T>*& L1, CNode<T>*& L2)
+{
+    if (L1 == 0)
+    {
+        L1 = L2;
+        L2 = 0;
+        return;
+    }
+
+    if (L2 == 0)
+        return;
+
+
+    CNode<T>* p1 = L1;
+    CNode<T>* p2 = L2;
+
+
+    if (p2->valor < p1->valor)
+    {
+        CNode<T>* temp = p2;
+        p2 = p2->next;
+
+        temp->next = p1;
+        L1 = temp;
+        p1 = L1;
+    }
+
+
+    while (p1->next != 0 && p2 != 0)
+    {
+        if (p2->valor < p1->next->valor)
+        {
+            CNode<T>* temp = p2;
+
+            p2 = p2->next;
+
+            temp->next = p1->next;
+            p1->next = temp;
+
+            p1 = temp;
+        }
+        else
+        {
+            p1 = p1->next;
+        }
+    }
+
+    if (p2 != 0)
+        p1->next = p2;
+
+    L2 = 0;
+}
+
+
+template<class T>
+void Merge<T>::print(CNode<T>* C)
+{
+    while (C != 0)
+    {
+        cout << C->valor << " -> ";
+        C = C->next;
+    }
+
+    cout << "NULL" << endl;
+}
+
+
+int main()
+{
+
+    CNode<int>* L1 = new CNode<int>(1);
+    L1->next = new CNode<int>(3);
+    L1->next->next = new CNode<int>(8);
+    L1->next->next->next = new CNode<int>(9);
+    L1->next->next->next->next = new CNode<int>(10);
+
+
+    CNode<int>* L2 = new CNode<int>(4);
+    L2->next = new CNode<int>(5);
+    L2->next->next = new CNode<int>(11);
+
+    Merge<int> m;
+
+    cout << "L1: ";
+    m.print(L1);
+
+    cout << "L2: ";
+    m.print(L2);
+
+    m.ejecutar(L1, L2);
+    cout << endl;
+
+    cout << "L1: ";
+    m.print(L1);
+
+    cout << "L2: ";
+    m.print(L2);
+}
