@@ -1,0 +1,593 @@
+#include <SFML/Graphics.hpp>
+
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <optional>
+#include <stdexcept>
+
+struct Node
+{
+    long long caramelos;
+    int id;
+
+    Node* padre;
+    Node* nodes[2];
+
+    float x, y;
+
+    Node(int identificador, long long cantidad)
+        : caramelos(cantidad),
+          id(identificador),
+          padre(nullptr),
+          nodes{nullptr, nullptr},
+          x(0), y(0)
+    {
+    }
+};
+
+class CBinTree
+{
+private:
+    Node* root;
+    std::vector<Node*> nodos;
+    std::vector<std::vector<long long>> estados;
+
+    int recorridos;
+    int profundidadMaxima;
+
+public:
+
+    CBinTree()
+        : root(nullptr),
+          recorridos(0),
+          profundidadMaxima(0)
+    {
+    }
+
+    ~CBinTree()
+    {
+        destruir(root);
+    }
+
+    // Construir el arbol a partir de un array
+    void ArmarArbol(const int* A, int N)
+    {
+        if (A == nullptr || N <= 0)
+        {
+            throw std::invalid_argument(
+                "El array debe contener elementos."
+            );
+        }
+
+        destruir(root);
+        root = nullptr;
+
+        nodos.clear();
+        estados.clear();
+
+        long long total = 0;
+
+        // Crear todos los nodos
+        for (int i = 0; i < N; i++)
+        {
+            if (A[i] < 0)
+            {
+                throw std::invalid_argument(
+                    "No puede haber caramelos negativos."
+                );
+            }
+
+            nodos.push_back(new Node(i, A[i]));
+            total += A[i];
+        }
+
+        // Conectar los nodos según la estructura deseada
+        int padres[] = {-1, 0, 0, 2, 2};
+
+        for (int i = 1; i < N; i++)
+        {
+            int padre = padres[i];
+
+            // Los nodos impares son hijos izquierdos.
+            // Los nodos pares son hijos derechos.
+            if (i == 1 || i == 3)
+            {
+                nodos[padre]->nodes[0] = nodos[i];
+            }
+            else
+            {
+                nodos[padre]->nodes[1] = nodos[i];
+            }
+
+            nodos[i]->padre = nodos[padre];
+        }
+
+        root = nodos[0];
+
+        if (total != N)
+        {
+            throw std::invalid_argument(
+                "La suma de caramelos debe ser igual "
+                "a la cantidad de nodos."
+            );
+        }
+
+        guardarEstado();
+
+        std::cout << "Arbol construido correctamente.\n";
+        std::cout << "Cantidad de nodos: " << N << '\n';
+        std::cout << "Cantidad de caramelos: " << total << '\n';
+    }
+
+    // Distribuir los caramelos
+    void DistribuirCaramelos()
+    {
+        recorridos = 0;
+
+        while (true)
+        {
+            Node* donante = nullptr;
+            Node* receptor = nullptr;
+
+            // Buscar nodo con mas de un caramelo
+            for (Node* n : nodos)
+            {
+                if (n->caramelos > 1)
+                {
+                    donante = n;
+                    break;
+                }
+            }
+
+            // Buscar nodo sin caramelos
+            for (Node* n : nodos)
+            {
+                if (n->caramelos == 0)
+                {
+                    receptor = n;
+                    break;
+                }
+            }
+
+            if (receptor == nullptr)
+            {
+                break;
+            }
+
+            if (donante == nullptr)
+            {
+                throw std::runtime_error(
+                    "No hay caramelos suficientes."
+                );
+            }
+
+            // Encontrar el camino entre ambos nodos
+            std::vector<Node*> camino =
+                obtenerCamino(donante, receptor);
+
+            // Mover un caramelo por cada conexion
+            for (std::size_t i = 0; i + 1 < camino.size(); i++)
+            {
+                Node* actual = camino[i];
+                Node* siguiente = camino[i + 1];
+
+                actual->caramelos--;
+                siguiente->caramelos++;
+
+                recorridos++;
+
+                guardarEstado();
+
+                std::cout
+                    << "Recorrido " << recorridos
+                    << ": Nodo " << actual->id
+                    << " -> Nodo " << siguiente->id
+                    << '\n';
+            }
+        }
+
+        std::cout << "\nDistribucion terminada.\n";
+        std::cout << "Total de recorridos: "
+                  << recorridos << '\n';
+    }
+
+    // Dibujar el arbol
+    void Draw()
+    {
+        sf::VideoMode escritorio =
+            sf::VideoMode::getDesktopMode();
+
+        unsigned int ancho = std::min(
+            std::max(900u,
+                static_cast<unsigned int>(nodos.size() * 100)),
+            std::max(600u, escritorio.size.x - 100)
+        );
+
+        unsigned int alto = std::min(
+            std::max(600u,
+                static_cast<unsigned int>(
+                    profundidadMaxima * 130 + 180)),
+            std::max(500u, escritorio.size.y - 100)
+        );
+
+        sf::RenderWindow ventana(
+            sf::VideoMode({ancho, alto}),
+            "Arbol Acaramelado",
+            sf::Style::Titlebar |
+            sf::Style::Close |
+            sf::Style::Resize
+        );
+
+        ventana.setFramerateLimit(60);
+
+        sf::Font fuente;
+
+        if (!fuente.openFromFile(
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"))
+        {
+            std::cerr << "No se pudo cargar la fuente.\n";
+            return;
+        }
+
+        // Calcular posiciones
+        int indice = 0;
+
+        posicionar(
+            root,
+            0,
+            indice,
+            ancho
+        );
+
+        // Comenzar pausado
+        std::size_t estadoActual = 0;
+
+        while (ventana.isOpen())
+        {
+            while (const std::optional<sf::Event> evento =
+                       ventana.pollEvent())
+            {
+                if (evento->is<sf::Event::Closed>())
+                {
+                    ventana.close();
+                }
+
+                if (const auto* tecla =
+                    evento->getIf<sf::Event::KeyPressed>())
+                {
+                    if (tecla->code ==
+                        sf::Keyboard::Key::Right)
+                    {
+                        if (estadoActual + 1 < estados.size())
+                        {
+                            estadoActual++;
+                        }
+                    }
+
+                    if (tecla->code ==
+                        sf::Keyboard::Key::Left)
+                    {
+                        if (estadoActual > 0)
+                        {
+                            estadoActual--;
+                        }
+                    }
+                }
+            }
+
+            ventana.clear(sf::Color(25, 25, 30));
+
+            // Restaurar el estado seleccionado
+            for (std::size_t i = 0; i < nodos.size(); i++)
+            {
+                nodos[i]->caramelos =
+                    estados[estadoActual][i];
+            }
+
+            dibujarRamas(ventana, root);
+
+            dibujarNodos(
+                ventana,
+                root,
+                fuente
+            );
+
+            std::string mensaje;
+
+            if (estadoActual == 0)
+            {
+                mensaje = "Estado inicial";
+            }
+            else
+            {
+                mensaje =
+                    "Recorrido " +
+                    std::to_string(estadoActual) +
+                    " de " +
+                    std::to_string(recorridos);
+            }
+
+            sf::Text titulo(fuente, mensaje, 25);
+
+            titulo.setFillColor(sf::Color::White);
+            titulo.setPosition({20, 15});
+
+            ventana.draw(titulo);
+
+            ventana.display();
+        }
+    }
+
+private:
+
+    void guardarEstado()
+    {
+        std::vector<long long> estado;
+
+        for (Node* n : nodos)
+        {
+            estado.push_back(n->caramelos);
+        }
+
+        estados.push_back(estado);
+    }
+
+    // Encontrar camino entre dos nodos
+    std::vector<Node*> obtenerCamino(
+        Node* origen,
+        Node* destino
+    )
+    {
+        std::vector<Node*> ancestrosOrigen;
+        std::vector<Node*> ancestrosDestino;
+
+        Node* actual = origen;
+
+        while (actual != nullptr)
+        {
+            ancestrosOrigen.push_back(actual);
+            actual = actual->padre;
+        }
+
+        actual = destino;
+
+        while (actual != nullptr)
+        {
+            ancestrosDestino.push_back(actual);
+            actual = actual->padre;
+        }
+
+        Node* comun = nullptr;
+
+        for (Node* a : ancestrosOrigen)
+        {
+            for (Node* b : ancestrosDestino)
+            {
+                if (a == b)
+                {
+                    comun = a;
+                    break;
+                }
+            }
+
+            if (comun != nullptr)
+            {
+                break;
+            }
+        }
+
+        std::vector<Node*> camino;
+
+        actual = origen;
+
+        while (actual != comun)
+        {
+            camino.push_back(actual);
+            actual = actual->padre;
+        }
+
+        camino.push_back(comun);
+
+        std::vector<Node*> segundaParte;
+
+        actual = destino;
+
+        while (actual != comun)
+        {
+            segundaParte.push_back(actual);
+            actual = actual->padre;
+        }
+
+        for (int i =
+            static_cast<int>(segundaParte.size()) - 1;
+            i >= 0; i--)
+        {
+            camino.push_back(segundaParte[i]);
+        }
+
+        return camino;
+    }
+
+    // Calcular profundidad maxima
+    int calcularProfundidad(Node* n)
+    {
+        if (n == nullptr)
+        {
+            return 0;
+        }
+
+        return 1 + std::max(
+            calcularProfundidad(n->nodes[0]),
+            calcularProfundidad(n->nodes[1])
+        );
+    }
+
+    // Posicionar los nodos por recorrido inorden
+    void posicionar(
+        Node* n,
+        int profundidad,
+        int& indice,
+        unsigned int ancho
+    )
+    {
+        if (n == nullptr)
+        {
+            return;
+        }
+
+        posicionar(
+            n->nodes[0],
+            profundidad + 1,
+            indice,
+            ancho
+        );
+
+        float espacio = static_cast<float>(ancho - 100) /
+            std::max(1, static_cast<int>(nodos.size()));
+
+        n->x = 50 + indice * espacio;
+        n->y = 100 + profundidad * 130;
+
+        indice++;
+
+        profundidadMaxima = std::max(
+            profundidadMaxima,
+            profundidad
+        );
+
+        posicionar(
+            n->nodes[1],
+            profundidad + 1,
+            indice,
+            ancho
+        );
+    }
+
+    void dibujarRamas(
+        sf::RenderWindow& ventana,
+        Node* n
+    )
+    {
+        if (n == nullptr)
+        {
+            return;
+        }
+
+        for (int i = 0; i < 2; i++)
+        {
+            Node* hijo = n->nodes[i];
+
+            if (hijo == nullptr)
+            {
+                continue;
+            }
+
+            sf::Vertex linea[2];
+
+            linea[0].position = {n->x, n->y};
+            linea[0].color = sf::Color::Yellow;
+
+            linea[1].position = {hijo->x, hijo->y};
+            linea[1].color = sf::Color::Yellow;
+
+            ventana.draw(
+                linea,
+                2,
+                sf::PrimitiveType::Lines
+            );
+
+            dibujarRamas(ventana, hijo);
+        }
+    }
+
+    void dibujarNodos(
+        sf::RenderWindow& ventana,
+        Node* n,
+        sf::Font& fuente
+    )
+    {
+        if (n == nullptr)
+        {
+            return;
+        }
+
+        float radio = 30;
+
+        sf::CircleShape circulo(radio);
+
+        circulo.setOrigin({radio, radio});
+        circulo.setPosition({n->x, n->y});
+
+        circulo.setFillColor(sf::Color(35, 35, 40));
+        circulo.setOutlineColor(sf::Color::Yellow);
+        circulo.setOutlineThickness(3);
+
+        ventana.draw(circulo);
+
+        sf::Text texto(
+            fuente,
+            std::to_string(n->caramelos),
+            22
+        );
+
+        texto.setFillColor(sf::Color::White);
+
+        sf::FloatRect limites = texto.getLocalBounds();
+
+        texto.setOrigin({
+            limites.position.x + limites.size.x / 2,
+            limites.position.y + limites.size.y / 2
+        });
+
+        texto.setPosition({n->x, n->y});
+
+        ventana.draw(texto);
+
+        dibujarNodos(ventana, n->nodes[0], fuente);
+        dibujarNodos(ventana, n->nodes[1], fuente);
+    }
+
+    void destruir(Node* n)
+    {
+        if (n == nullptr)
+        {
+            return;
+        }
+
+        destruir(n->nodes[0]);
+        destruir(n->nodes[1]);
+
+        delete n;
+    }
+};
+
+int main()
+{
+    // MODIFICA ESTE ARRAY PARA PROBAR OTROS ARBOLES
+    int A[] = {0, 0, 0, 0, 5};
+
+    int N = sizeof(A) / sizeof(A[0]);
+
+    CBinTree Arbol;
+
+    try
+    {
+        Arbol.ArmarArbol(A, N);
+
+        Arbol.DistribuirCaramelos();
+
+        Arbol.Draw();
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Error: " << e.what() << '\n';
+        return 1;
+    }
+
+    return 0;
+}
+
+// g++ ArbolAcaramelado.cpp -o caramelos -lsfml-graphics -lsfml-window -lsfml-system
+// ./caramelos
